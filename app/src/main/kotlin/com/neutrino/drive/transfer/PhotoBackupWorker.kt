@@ -25,6 +25,8 @@ import com.neutrino.drive.core.drive.KeyException
 import com.neutrino.drive.core.drive.UploadSource
 import com.neutrino.drive.graph
 import com.neutrino.drive.storage.Settings
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -46,7 +48,14 @@ import java.util.concurrent.TimeUnit
  */
 class PhotoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
+    /**
+     * The periodic job, the content trigger and "Back up now" can all be due at once. Run
+     * concurrently, each would find the folder missing and create one, and upload the same photo:
+     * so runs are serialised, and each reads the ledger and folder id only once it holds the lock.
+     */
+    override suspend fun doWork(): Result = RUN_LOCK.withLock { run() }
+
+    private suspend fun run(): Result {
         val graph = applicationContext.graph
         val settings = graph.settings
         try {
@@ -164,6 +173,7 @@ class PhotoBackupWorker(context: Context, params: WorkerParameters) : CoroutineW
     }
 
     companion object {
+        private val RUN_LOCK = Mutex()
         private const val NOTIFICATION_ID = 4201
         private const val MAX_FAILURES = 5
         private const val PERIODIC = "photo-backup"

@@ -188,7 +188,8 @@ fun EncryptionSetupScreen(onDone: () -> Unit) {
 @Composable
 fun KitBox(kit: String) {
     Text(
-        kit, fontFamily = FontFamily.Monospace, fontSize = 15.sp, lineHeight = 22.sp,
+        kit, fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 20.sp, softWrap = false,
+        maxLines = Int.MAX_VALUE,
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(14.dp),
     )

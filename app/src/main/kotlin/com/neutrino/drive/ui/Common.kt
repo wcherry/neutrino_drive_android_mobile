@@ -63,7 +63,9 @@ import java.time.Instant
 fun formatBytes(context: Context, bytes: Long): String = Formatter.formatShortFileSize(context, bytes)
 
 fun relative(instant: Instant?): String = instant?.let {
-    DateUtils.getRelativeTimeSpanString(it.toEpochMilli(), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString()
+    // A moment in the future is clock skew between phone and server, not a prediction.
+    val now = System.currentTimeMillis()
+    DateUtils.getRelativeTimeSpanString(minOf(it.toEpochMilli(), now), now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString()
 } ?: ""
 
 /** Icon and tint for a row, keyed on the owning app so a `.docx` looks like the document it is. */
