@@ -8,11 +8,11 @@ bouncycastle = "1.82"
 composeBom = "2025.09.01"
 activityCompose = "1.10.1"
 lifecycle = "2.9.4"
-navigation = "2.9.5"
 work = "2.10.5"
 biometric = "1.1.0"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
+exifinterface = "1.4.1"
 zxingCore = "3.5.3"
 zxingEmbedded = "4.3.0"
 junit = "4.13.2"
@@ -33,7 +33,6 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -42,6 +41,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-material-icons = { module = "androidx.compose.material:material-icons-extended" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxingCore" }
 zxing-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
 

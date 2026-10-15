@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Drive</string>
+    <string name="channel_transfers">Uploads and backup</string>
+</resources>

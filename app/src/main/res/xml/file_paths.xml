@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Decrypted files handed to a viewer app: the open cache, and offline copies. -->
+<paths>
+    <cache-path name="open" path="open/" />
+    <files-path name="offline" path="offline/" />
+</paths>
