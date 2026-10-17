@@ -19,12 +19,12 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.neutrino.drive.AppGraph
-import com.neutrino.drive.core.api.ApiException
 import com.neutrino.drive.core.drive.ImportMetadata
-import com.neutrino.drive.core.drive.KeyException
 import com.neutrino.drive.core.drive.UploadSource
 import com.neutrino.drive.graph
 import com.neutrino.drive.storage.Settings
+import com.neutrino.shared.core.api.ApiException
+import com.neutrino.shared.core.keys.KeyException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable

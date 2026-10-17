@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import com.neutrino.drive.security.AppLock
 import com.neutrino.drive.ui.FileOpener
 import com.neutrino.drive.ui.Root
 import com.neutrino.drive.ui.theme.NeutrinoTheme
+import com.neutrino.shared.android.LocalNeutrinoAccount
+import com.neutrino.shared.android.security.AppLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -40,8 +42,10 @@ class MainActivity : FragmentActivity() {
             }
         }
         setContent {
-            NeutrinoTheme {
-                Root(pendingLink) { pendingLink.value = null }
+            CompositionLocalProvider(LocalNeutrinoAccount provides graph.account) {
+                NeutrinoTheme {
+                    Root(pendingLink) { pendingLink.value = null }
+                }
             }
         }
     }

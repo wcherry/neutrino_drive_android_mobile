@@ -9,7 +9,7 @@ import android.net.Uri
 import android.util.LruCache
 import androidx.exifinterface.media.ExifInterface
 import com.neutrino.drive.core.api.NeutrinoApi
-import com.neutrino.drive.core.crypto.B64
+import com.neutrino.shared.core.crypto.B64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

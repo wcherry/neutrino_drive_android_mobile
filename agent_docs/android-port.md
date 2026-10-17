@@ -8,12 +8,13 @@ hosted server.
 
 | Decision | Why |
 |---|---|
+| Shared code lives in `neutrino_shared_android` (since 2026-10-16) | Extracted when Calendar for Android was built: auth, base API client, crypto, keys, Keystore storage, app lock, sign-in/key screens. Built from source by `includeBuild("../neutrino_shared_android")`. File references below to `crypto/`, `keys/` and the crosscheck now point there. See that repo's `agent_docs/shared-android.md`. |
 | Kotlin + Jetpack Compose, `minSdk 26`, `targetSdk 36` | Native, current toolkit. 26 gives Keystore AES-GCM, adaptive icons, content-URI job triggers. |
 | `:core` is plain Kotlin/JVM; `:app` is Android | Everything that must match other clients byte for byte (crypto, keyring, upload wire format, API) is tested on the JVM in seconds, with no emulator. |
 | Pure-Kotlin libsodium on BouncyCastle | No JNI `.so` (no 16 KB page-alignment work, no ABI splits); runs in JVM tests. HSalsa20/HChaCha20/secretstream are written out in `Sodium.kt`/`SecretStream.kt`. Proven both ways — §3. |
 | Streaming secretstream | Same one-message wire format as every client, but encrypt and decrypt run over streams (the MAC is held back and checked at the end), so a 2 GB video never sits in memory. Decrypted output is written to a `.part` file and renamed only after the MAC verifies. |
 | OAuth client `neutrino-android` | Root CLAUDE.md rule 3. Registered by `neutrino/migrations/00141_oauth__2026-10-15-000000_add_android_drive_client` (branch `feature/android-drive-client` in `neutrino`). **Sign-in fails against any server without that migration.** |
-| Keyring model, per account, Keystore-sealed | One file per item under `noBackupFilesDir/secrets`, AES-256-GCM with a non-exportable Keystore key; the web's serialised keyring JSON inside. No user-auth requirement on the key (like iOS `AfterFirstUnlock`) so photo backup works while locked. Android has no cross-app keychain, so other future Neutrino Android apps would each hold a copy. |
+| Keyring model, per account, Keystore-sealed | One file per item under `noBackupFilesDir/secrets`, AES-256-GCM with a non-exportable Keystore key; the web's serialised keyring JSON inside. No user-auth requirement on the key (like iOS `AfterFirstUnlock`) so photo backup works while locked. Android has no cross-app keychain, so each Neutrino Android app (Drive `nd`, Calendar `ncal`) holds its own copy. |
 | Uploads and photo backup are WorkManager jobs | Android's equivalent of iOS's background `URLSession`/`BGTask`: they survive leaving the app, honour Wi-Fi/charging constraints, and run as a `dataSync` foreground service while transferring. |
 | Shared/picked files are copied into a private outbox first | `content://` grants end with the activity. Copies live in `noBackupFilesDir/outbox` and are deleted once uploaded. Each file has a stable upload id so a retry finishes rather than duplicates. |
 | Device name sent ASCII-only | The server reads `X-Device-Name` with actix `to_str()`, which rejects non-ASCII and records no name. See §5. |
@@ -82,8 +83,15 @@ are tested); app lock on a device with biometrics; release (R8) build at run tim
 ## 6. Building
 
 JDK 17 (Gradle 8.14 does not run on JDK 25): `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`.
-`./gradlew :core:test`, `./gradlew :app:assembleDebug`, `./scripts/crosscheck-web-crypto.sh`.
+`./gradlew :core:test`, `./gradlew :app:assembleDebug`,
+`../neutrino_shared_android/scripts/crosscheck-web-crypto.sh`.
 Live test: `NEUTRINO_LIVE_URL=http://localhost:8080 NEUTRINO_LIVE_EMAIL=… NEUTRINO_LIVE_PASSWORD=…
 NEUTRINO_LIVE_EMAIL2=… NEUTRINO_LIVE_PASSWORD2=… ./gradlew :core:test --tests '*LiveServerTest*'`
 (two fresh accounts with no keys; use a throwaway database). From the emulator the host is
 `http://10.0.2.2:8080`.
+
+## 7. Since the shared extraction (2026-10-16)
+
+The crypto, keys and auth tests moved with the code to `neutrino_shared_android` (41 tests +
+crosscheck). This repo's `:core:test` now holds the Drive flows only (7 tests + `LiveServerTest`);
+all pass, and `LiveServerTest` passed against a local server with two fresh accounts.

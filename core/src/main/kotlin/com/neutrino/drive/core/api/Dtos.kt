@@ -1,45 +1,13 @@
 package com.neutrino.drive.core.api
 
+import com.neutrino.shared.core.api.FileDto
 import kotlinx.serialization.Serializable
 
-// Response shapes from `neutrino/src/drive/filesystem/dto.rs`, `drive/storage/dto.rs`,
-// `drive/permissions/dto.rs`, `drive/sharing/dto.rs` and `auth/dto.rs` — camelCase on the wire.
+// Drive's own response shapes, from `neutrino/src/drive/filesystem/dto.rs`, `drive/storage/dto.rs`,
+// `drive/permissions/dto.rs` and `drive/sharing/dto.rs` — camelCase on the wire. The shapes every
+// app shares (files, folders, keys, users) are in neutrino_shared_android.
 // Every field a screen can do without is optional, so a server that adds or drops one cannot take
 // down browsing. Dates stay strings here; `DriveDate.parse` turns them into instants.
-
-@Serializable
-data class FolderDto(
-    val id: String,
-    val name: String,
-    val parentId: String? = null,
-    val isStarred: Boolean? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null,
-)
-
-@Serializable
-data class FileDto(
-    val id: String,
-    val name: String,
-    val folderId: String? = null,
-    val sizeBytes: Long? = null,
-    val mimeType: String? = null,
-    val isStarred: Boolean? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null,
-    /** `/api/v1/drive/files/{id}/thumbnail?v=…`, bearer-authenticated. Plaintext by design — see the upload. */
-    val coverThumbnailUrl: String? = null,
-    val contentVersion: Long? = null,
-    val importSource: String? = null,
-    val deletedAt: String? = null,
-)
-
-@Serializable
-data class FolderContentsDto(
-    val folder: FolderDto? = null,
-    val folders: List<FolderDto> = emptyList(),
-    val files: List<FileDto> = emptyList(),
-)
 
 @Serializable
 data class FileListDto(val files: List<FileDto> = emptyList())
@@ -73,28 +41,7 @@ data class QuotaDto(
     val dailyCapBytes: Long? = null,
 )
 
-@Serializable
-data class FileKeyDto(
-    val encryptedFileKey: String,
-    /** Absent from servers that predate rotation; those DEKs are sealed to version 1. */
-    val keyVersion: Int? = null,
-)
-
 /** `PublicKeyResponse` — the field is `version` on the wire, not `keyVersion`. */
-@Serializable
-data class PublicKeyDto(val userId: String? = null, val publicKey: String, val version: Int = 1)
-
-@Serializable
-data class UserDto(val id: String, val email: String, val name: String = "")
-
-@Serializable
-data class ProfileDto(
-    val id: String,
-    val email: String,
-    val name: String = "",
-    val totpEnabled: Boolean = false,
-)
-
 @Serializable
 data class PermissionDto(
     val id: String,

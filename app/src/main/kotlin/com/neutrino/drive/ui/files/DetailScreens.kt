@@ -55,12 +55,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.neutrino.drive.core.api.DriveDate
 import com.neutrino.drive.core.api.FileVersionDto
 import com.neutrino.drive.core.api.PermissionDto
 import com.neutrino.drive.core.drive.DriveItem
-import com.neutrino.drive.core.drive.ShareRole
 import com.neutrino.drive.core.drive.SharePartialException
+import com.neutrino.drive.core.drive.ShareRole
 import com.neutrino.drive.graph
 import com.neutrino.drive.ui.ConfirmDialog
 import com.neutrino.drive.ui.EmptyState
@@ -69,6 +68,7 @@ import com.neutrino.drive.ui.SectionHeader
 import com.neutrino.drive.ui.formatBytes
 import com.neutrino.drive.ui.relative
 import com.neutrino.drive.ui.theme.Brand
+import com.neutrino.shared.core.api.DriveDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
