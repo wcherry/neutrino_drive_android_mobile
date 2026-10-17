@@ -1,12 +1,14 @@
 package com.neutrino.drive.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.neutrino.drive.R
+import com.neutrino.shared.android.ui.NeutrinoBrand
+import com.neutrino.shared.android.ui.NeutrinoTheme as SharedTheme
 
 /**
  * The Drive brand from `NeutrinoBrand.drive` in the iOS shared package: an indigo → blue gradient
@@ -60,7 +62,17 @@ private val Dark = darkColorScheme(
     surfaceContainerHigh = Color(0xFF282830),
 )
 
+/** How the shared sign-in, lock and key screens draw Drive. */
+val DriveBrand = NeutrinoBrand(
+    name = "Neutrino Drive",
+    tagline = "Secure encrypted file storage",
+    primary = Brand.indigo,
+    secondary = Brand.blue,
+    icon = R.drawable.ic_launcher_art,
+    lockedSubtitle = "Your files are encrypted on this phone.",
+)
+
 @Composable
 fun NeutrinoTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, content = content)
+    SharedTheme(DriveBrand, colorScheme = if (isSystemInDarkTheme()) Dark else Light, content = content)
 }

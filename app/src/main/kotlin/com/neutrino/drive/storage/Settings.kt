@@ -1,42 +1,34 @@
 package com.neutrino.drive.storage
 
 import android.content.Context
-import android.os.Build
-import android.provider.Settings as SystemSettings
-import com.neutrino.drive.core.api.AppConfig
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.neutrino.shared.android.AccountSettings
 import kotlinx.coroutines.flow.StateFlow
 
-/** Non-secret preferences. Secrets live in [SecureStore]. */
-class Settings(private val context: Context) {
+/**
+ * Non-secret preferences. Secrets live in the shared `SecureStore`. The account's own (server,
+ * device name, app lock) are the shared [AccountSettings], in the same `nd.settings` file under the
+ * same keys Drive always used; photo backup's are Drive's alone.
+ */
+class Settings(context: Context, private val account: AccountSettings) {
 
-    private val prefs = context.getSharedPreferences("nd.settings", Context.MODE_PRIVATE)
+    private val prefs = account.prefs
 
     var serverUrl: String
-        get() = prefs.getString(KEY_SERVER, null) ?: AppConfig.DEFAULT_SERVER_URL
-        set(value) = prefs.edit().putString(KEY_SERVER, AppConfig.normalizeServerUrl(value)).apply()
+        get() = account.serverUrl
+        set(value) {
+            account.serverUrl = value
+        }
 
-    /**
-     * How this device appears in the account's session list: "<device> - Neutrino Drive", as the
-     * iOS apps name themselves (`DeviceIdentity`), unless the user picked a name.
-     */
     var customDeviceName: String?
-        get() = prefs.getString(KEY_DEVICE_NAME, null)
-        set(value) = prefs.edit().putString(KEY_DEVICE_NAME, value?.trim()?.takeIf { it.isNotEmpty() }).apply()
+        get() = account.customDeviceName
+        set(value) {
+            account.customDeviceName = value
+        }
 
-    val deviceName: String
-        get() = customDeviceName ?: "${systemDeviceName()} - ${AppConfig.DISPLAY_NAME}"
+    val deviceName: String get() = account.deviceName
 
-    private fun systemDeviceName(): String =
-        SystemSettings.Global.getString(context.contentResolver, "device_name")?.takeIf { it.isNotBlank() }
-            ?: "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
-
-    private val _appLock = MutableStateFlow(prefs.getBoolean(KEY_APP_LOCK, false))
-    val appLock: StateFlow<Boolean> = _appLock
-    fun setAppLock(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_APP_LOCK, enabled).apply()
-        _appLock.value = enabled
-    }
+    val appLock: StateFlow<Boolean> get() = account.appLock
+    fun setAppLock(enabled: Boolean) = account.setAppLock(enabled)
 
     // ── Photo backup ────────────────────────────────────────────────────────────────────────────
 
@@ -87,9 +79,6 @@ class Settings(private val context: Context) {
 
     companion object {
         const val DEFAULT_PHOTO_FOLDER = "Android Photos"
-        private const val KEY_SERVER = "nd.server_host"
-        private const val KEY_DEVICE_NAME = "nd.device_name"
-        private const val KEY_APP_LOCK = "nd.app_lock"
         private const val KEY_PHOTO_ENABLED = "photoSync.enabled"
         private const val KEY_PHOTO_FOLDER = "photoSync.folderName"
         private const val KEY_PHOTO_FOLDER_ID = "photoSync.folderID"

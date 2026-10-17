@@ -1,10 +1,10 @@
 package com.neutrino.drive.core.drive
 
-import com.neutrino.drive.core.api.DriveDate
-import com.neutrino.drive.core.api.FileDto
-import com.neutrino.drive.core.api.FolderDto
 import com.neutrino.drive.core.api.TrashFileDto
 import com.neutrino.drive.core.api.TrashFolderDto
+import com.neutrino.shared.core.api.DriveDate
+import com.neutrino.shared.core.api.FileDto
+import com.neutrino.shared.core.api.FolderDto
 import java.time.Instant
 
 /** One file or folder, as every screen shows it. */

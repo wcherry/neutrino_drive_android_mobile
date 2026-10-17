@@ -49,6 +49,7 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+    implementation("com.neutrino.shared:neutrino-android")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

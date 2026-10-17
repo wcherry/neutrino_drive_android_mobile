@@ -1,6 +1,6 @@
-// Everything that has to agree byte for byte with the web, iOS, macOS and Windows clients — the
-// E2EE primitives, the keyring and its transports, the upload wire format — plus the HTTP client.
-// Plain Kotlin/JVM with no Android dependency, so all of it is tested on the JVM in seconds.
+// Drive's protocol on top of neutrino_shared_android's core (E2EE, keyring, sign-in): the upload
+// wire format, downloads, sharing and the Drive API. Plain Kotlin/JVM with no Android dependency,
+// so all of it is tested on the JVM in seconds.
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
@@ -11,11 +11,13 @@ kotlin {
 }
 
 dependencies {
+    api("com.neutrino.shared:neutrino-core")
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.serialization.json)
     api(libs.okhttp)
     implementation(libs.bouncycastle)
 
+    testImplementation(testFixtures("com.neutrino.shared:neutrino-core"))
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -26,12 +28,4 @@ tasks.test {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
-}
-
-// Driven by scripts/crosscheck-web-crypto.sh: `-Pargs="emit out.json"` / `-Pargs="verify a.json w.json"`.
-tasks.register<JavaExec>("crossCheck") {
-    dependsOn("testClasses")
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("com.neutrino.drive.core.CrossCheck")
-    args = (project.findProperty("args") as String? ?: "").split(" ").filter { it.isNotEmpty() }
 }

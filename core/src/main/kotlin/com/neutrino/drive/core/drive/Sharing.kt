@@ -1,10 +1,12 @@
 package com.neutrino.drive.core.drive
 
-import com.neutrino.drive.core.api.ApiException
 import com.neutrino.drive.core.api.NeutrinoApi
 import com.neutrino.drive.core.api.PermissionDto
-import com.neutrino.drive.core.api.UserDto
-import com.neutrino.drive.core.crypto.FileCrypto
+import com.neutrino.shared.core.api.ApiException
+import com.neutrino.shared.core.api.UserDto
+import com.neutrino.shared.core.crypto.FileCrypto
+import com.neutrino.shared.core.keys.KeyringStore
+import com.neutrino.shared.core.keys.openDek
 
 /** Roles the permissions endpoints accept; the Rust `Role` enum serialises them lowercase. */
 enum class ShareRole(val wire: String, val label: String) {

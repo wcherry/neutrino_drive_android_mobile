@@ -1,28 +1,25 @@
 package com.neutrino.drive.core
 
-import com.neutrino.drive.core.api.ApiException
-import com.neutrino.drive.core.api.AuthException
-import com.neutrino.drive.core.crypto.B64
-import com.neutrino.drive.core.crypto.FileCrypto
-import com.neutrino.drive.core.crypto.Sodium
-import com.neutrino.drive.core.drive.DeviceKeyCheck
+import com.neutrino.drive.core.api.NeutrinoApi
 import com.neutrino.drive.core.drive.Downloader
 import com.neutrino.drive.core.drive.FilePendingKeyStore
 import com.neutrino.drive.core.drive.ImportMetadata
-import com.neutrino.drive.core.drive.InMemoryKeyringStore
-import com.neutrino.drive.core.drive.KeyException
-import com.neutrino.drive.core.drive.KeyManager
 import com.neutrino.drive.core.drive.KeyShareFailure
-import com.neutrino.drive.core.drive.ShareRole
 import com.neutrino.drive.core.drive.SharePartialException
+import com.neutrino.drive.core.drive.ShareRole
 import com.neutrino.drive.core.drive.SharingService
 import com.neutrino.drive.core.drive.UploadSource
 import com.neutrino.drive.core.drive.Uploader
-import com.neutrino.drive.core.keys.Keyring
-import com.neutrino.drive.core.keys.KeyringCodec
-import com.neutrino.drive.core.keys.KeyringException
-import com.neutrino.drive.core.keys.Pairing
-import com.neutrino.drive.core.keys.RecoveryKit
+import com.neutrino.shared.core.FakeServer
+import com.neutrino.shared.core.crypto.B64
+import com.neutrino.shared.core.crypto.FileCrypto
+import com.neutrino.shared.core.crypto.Sodium
+import com.neutrino.shared.core.keys.DeviceKeyCheck
+import com.neutrino.shared.core.keys.InMemoryKeyringStore
+import com.neutrino.shared.core.keys.KeyException
+import com.neutrino.shared.core.keys.KeyManager
+import com.neutrino.shared.core.keys.Keyring
+import com.neutrino.shared.core.keys.KeyringException
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
@@ -38,7 +35,10 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Instant
 
-/** The client against [FakeServer]: real HTTP, real crypto, real multipart. */
+/**
+ * Drive's protocol against [FakeServer]: real HTTP, real crypto, real multipart. Sign-in and key
+ * provisioning are tested in neutrino_shared_android.
+ */
 class EndToEndTest {
 
     private lateinit var fake: FakeServer
@@ -57,7 +57,7 @@ class EndToEndTest {
     }
 
     private class Client(val fake: FakeServer, tmp: File) {
-        val api = fake.client()
+        val api = fake.client { http, auth -> NeutrinoApi(http, auth) }
         val keys = InMemoryKeyringStore()
         val check = DeviceKeyCheck(api, keys)
         val manager = KeyManager(api, keys, check)
@@ -67,72 +67,6 @@ class EndToEndTest {
     }
 
     private fun signedIn(): Client = Client(fake, tmp).also { runBlocking { it.api.auth.login(fake.email, fake.password) } }
-
-    @Test
-    fun loginRunsTheThreeStepFlowWithTheAndroidClientId() = runBlocking {
-        val c = Client(fake, tmp)
-        c.api.auth.login(fake.email, fake.password)
-        assertEquals(fake.userId, c.api.auth.userId)
-        assertTrue(fake.requestLog.any { it.startsWith("GET /api/v1/oauth/authorize?client_id=neutrino-android") })
-        try {
-            Client(fake, tmp).api.auth.login(fake.email, "wrong")
-            fail()
-        } catch (_: AuthException.InvalidCredentials) {
-        }
-    }
-
-    @Test
-    fun twoFactorIsAskedForThenAccepted() = runBlocking {
-        fake.requireTotp = "123456"
-        val c = Client(fake, tmp)
-        try {
-            c.api.auth.login(fake.email, fake.password); fail()
-        } catch (_: AuthException.TwoFactorRequired) {
-        }
-        try {
-            c.api.auth.login(fake.email, fake.password, "000000"); fail()
-        } catch (_: AuthException.InvalidTwoFactorCode) {
-        }
-        c.api.auth.login(fake.email, fake.password, " 123456 ")
-        assertTrue(c.api.auth.isSignedIn)
-    }
-
-    @Test
-    fun a401RefreshesOnceAndARejectedRefreshSignsOut() = runBlocking {
-        val c = signedIn()
-        c.manager.provision()
-        fake.revokedAccessTokens += c.api.auth.currentAccessToken!!
-        c.api.publishedKey(fake.userId) // refreshed and retried transparently
-        assertTrue(c.api.auth.isSignedIn)
-
-        var signedOut = false
-        c.api.auth.onSignedOut = { signedOut = true }
-        fake.revokedAccessTokens += c.api.auth.currentAccessToken!!
-        fake.refreshTokenValid = false
-        try {
-            c.api.publishedKey(fake.userId); fail()
-        } catch (_: ApiException.SessionExpired) {
-        }
-        assertTrue(signedOut)
-        assertFalse(c.api.auth.isSignedIn)
-    }
-
-    @Test
-    fun provisionPublishesAndReturnsAKitThatRestoresTheSameKey() = runBlocking {
-        val c = signedIn()
-        assertTrue(c.manager.canProvision())
-        val kit = c.manager.provision()
-        assertEquals(1, fake.publishedKeys[fake.userId]!!.single().version)
-        assertFalse(c.manager.canProvision())
-        try {
-            Client(fake, tmp).also { it.api.auth.login(fake.email, fake.password) }.manager.provision(); fail()
-        } catch (_: KeyException.AlreadyPublished) {
-        }
-        // A second device restores from the kit and gets the same key.
-        val other = signedIn()
-        other.manager.restoreRecoveryKit(kit)
-        assertArrayEquals(c.manager.keyring()!!.active!!.secretKey, other.manager.keyring()!!.active!!.secretKey)
-    }
 
     @Test
     fun uploadThenDownloadRoundTripsAndSendsThePartsInTheServersOrder() = runBlocking {
@@ -231,49 +165,6 @@ class EndToEndTest {
         phone.downloader.download(id, File(tmp, "old.txt"))
         assertEquals("old", File(tmp, "old.txt").readText())
         assertEquals(2, phone.manager.keyring()!!.active!!.version)
-    }
-
-    @Test
-    fun recoveryKitIsCheckedAgainstTheAccountAndRenumbered() = runBlocking {
-        val c = signedIn()
-        val pair = Sodium.boxKeyPair()
-        // The directory calls this key v3; a kit printed long ago calls it v1.
-        fake.publishedKeys[fake.userId] = mutableListOf(FakeServer.Published(B64.encode(pair.publicKey), 3))
-        val kit = RecoveryKit.export(Keyring.fromKeyPair(fake.userId, pair.secretKey, 1))
-        c.manager.restoreRecoveryKit(kit)
-        assertEquals(3, c.manager.keyring()!!.active!!.version)
-
-        val wrong = RecoveryKit.export(Keyring.fromKeyPair(fake.userId, Sodium.boxKeyPair().secretKey, 1))
-        try {
-            signedIn().manager.restoreRecoveryKit(wrong); fail()
-        } catch (_: KeyException.KitDoesNotMatchAccount) {
-        }
-    }
-
-    @Test
-    fun pairingAcceptsTheSendersKeyring() = runBlocking {
-        val c = signedIn()
-        val ring = Keyring.fromKeyPair(fake.userId, Sodium.boxKeyPair().secretKey, 2)
-        val session = Pairing.createSession()
-        // What the sender (web) does with QR-A:
-        val reply = Pairing.Response(
-            Pairing.RESPONSE_TYPE, 1,
-            B64.encode(Sodium.boxSeal(KeyringCodec.encodeJson(ring).toByteArray(), B64.decode(session.offer.pk)!!)),
-            session.offer.n,
-        )
-        val parsed = Pairing.parseResponse(kotlinx.serialization.json.Json.encodeToString(Pairing.Response.serializer(), reply))
-        c.manager.acceptPairing(parsed, session)
-        assertEquals(2, c.manager.keyring()!!.active!!.version)
-
-        // A keyring for another account is refused.
-        val stranger = Keyring.fromKeyPair("someone-else", Sodium.boxKeyPair().secretKey, 1)
-        val s2 = Pairing.createSession()
-        val r2 = Pairing.Response(Pairing.RESPONSE_TYPE, 1,
-            B64.encode(Sodium.boxSeal(KeyringCodec.encodeJson(stranger).toByteArray(), B64.decode(s2.offer.pk)!!)), s2.offer.n)
-        try {
-            c.manager.acceptPairing(r2, s2); fail()
-        } catch (_: KeyringException.WrongAccount) {
-        }
     }
 
     @Test

@@ -59,20 +59,20 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.neutrino.drive.BuildConfig
 import com.neutrino.drive.core.api.QuotaDto
-import com.neutrino.drive.core.drive.DeviceKeyCheck
-import com.neutrino.drive.core.keys.RecoveryKit
 import com.neutrino.drive.graph
-import com.neutrino.drive.security.AppLock
 import com.neutrino.drive.transfer.PhotoBackupWorker
 import com.neutrino.drive.ui.ConfirmDialog
 import com.neutrino.drive.ui.Route
 import com.neutrino.drive.ui.SectionHeader
 import com.neutrino.drive.ui.TextInputDialog
 import com.neutrino.drive.ui.formatBytes
-import com.neutrino.drive.ui.keys.KitBox
-import com.neutrino.drive.ui.keys.copySensitive
 import com.neutrino.drive.ui.openUrl
 import com.neutrino.drive.ui.theme.Brand
+import com.neutrino.shared.android.security.AppLock
+import com.neutrino.shared.android.ui.keys.KitBox
+import com.neutrino.shared.android.ui.keys.copySensitive
+import com.neutrino.shared.core.keys.DeviceKeyCheck
+import com.neutrino.shared.core.keys.RecoveryKit
 import kotlinx.coroutines.launch
 
 /** "Report a bug": the central tracker's form, prefilled with what a report needs — never the server address. */

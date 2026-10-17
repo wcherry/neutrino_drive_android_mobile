@@ -1,18 +1,18 @@
 package com.neutrino.drive.core
 
-import com.neutrino.drive.core.api.AuthClient
 import com.neutrino.drive.core.api.NeutrinoApi
-import com.neutrino.drive.core.crypto.FileCrypto
-import com.neutrino.drive.core.drive.DeviceKeyCheck
 import com.neutrino.drive.core.drive.Downloader
 import com.neutrino.drive.core.drive.FilePendingKeyStore
 import com.neutrino.drive.core.drive.ImportMetadata
-import com.neutrino.drive.core.drive.InMemoryKeyringStore
-import com.neutrino.drive.core.drive.KeyManager
 import com.neutrino.drive.core.drive.ShareRole
 import com.neutrino.drive.core.drive.SharingService
 import com.neutrino.drive.core.drive.UploadSource
 import com.neutrino.drive.core.drive.Uploader
+import com.neutrino.shared.core.api.AuthClient
+import com.neutrino.shared.core.crypto.FileCrypto
+import com.neutrino.shared.core.keys.DeviceKeyCheck
+import com.neutrino.shared.core.keys.InMemoryKeyringStore
+import com.neutrino.shared.core.keys.KeyManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertArrayEquals
@@ -33,7 +33,7 @@ class LiveServerTest {
     private val url = System.getenv("NEUTRINO_LIVE_URL")
 
     private class Device(url: String, tmp: File) {
-        val api = NeutrinoApi(OkHttpClient(), AuthClient(OkHttpClient(), MemorySessionStore(), url) { "JVM test - Neutrino Drive" })
+        val api = NeutrinoApi(OkHttpClient(), AuthClient(com.neutrino.drive.core.api.AppConfig.config, OkHttpClient(), com.neutrino.shared.core.MemorySessionStore(), url) { "JVM test - Neutrino Drive" })
         val keys = InMemoryKeyringStore()
         val check = DeviceKeyCheck(api, keys)
         val manager = KeyManager(api, keys, check)

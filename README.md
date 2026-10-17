@@ -4,8 +4,9 @@ End-to-end encrypted file storage — the Android port of `neutrino_drive_ios_mo
 encrypted on the phone before upload with the same scheme as the web, iOS, macOS and Windows
 clients, and open on all of them.
 
-- `core/` — plain Kotlin/JVM: libsodium-compatible crypto, keyring, recovery kit, pairing, the
-  Neutrino API client and the upload/download protocol. Tested on the JVM.
+- `core/` — plain Kotlin/JVM: the Drive API client and the upload/download protocol. Tested on the
+  JVM. Crypto, keyring, recovery kit, pairing, sign-in and the base API client come from
+  `../neutrino_shared_android`, which must be a sibling of this repo.
 - `app/` — the Android app (Jetpack Compose).
 
 ## Build
@@ -14,9 +15,9 @@ Needs JDK 17 and the Android SDK (API 36).
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-./gradlew :core:test                 # crypto, protocol, end-to-end against a fake server
+./gradlew :core:test                 # Drive protocol end-to-end against a fake server
 ./gradlew :app:assembleDebug         # app/build/outputs/apk/debug/app-debug.apk
-./scripts/crosscheck-web-crypto.sh   # both ways against the web's own e2e-crypto (needs Node)
+../neutrino_shared_android/scripts/crosscheck-web-crypto.sh   # crypto vs. the web (needs Node)
 ```
 
 The server must carry `neutrino/migrations/00141_oauth__*`, which registers this app's OAuth

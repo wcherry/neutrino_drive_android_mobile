@@ -21,10 +21,10 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.neutrino.drive.NeutrinoDriveApplication
-import com.neutrino.drive.core.api.ApiException
 import com.neutrino.drive.core.drive.UploadSource
 import com.neutrino.drive.graph
 import com.neutrino.drive.storage.OfflineStore
+import com.neutrino.shared.core.api.ApiException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable

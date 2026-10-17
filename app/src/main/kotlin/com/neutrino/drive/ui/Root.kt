@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
@@ -21,8 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,6 +30,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,13 +48,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.neutrino.drive.R
 import com.neutrino.drive.core.drive.AppLink
 import com.neutrino.drive.core.drive.DriveItem
 import com.neutrino.drive.graph
-import com.neutrino.drive.security.AppLock
-import com.neutrino.drive.ui.auth.LoginScreen
-import com.neutrino.drive.ui.auth.RegisterScreen
 import com.neutrino.drive.ui.files.DriveViewModel
 import com.neutrino.drive.ui.files.FilesScreen
 import com.neutrino.drive.ui.files.OfflineScreen
@@ -64,14 +60,18 @@ import com.neutrino.drive.ui.files.VersionsScreen
 import com.neutrino.drive.ui.files.WebViewerScreen
 import com.neutrino.drive.ui.files.ZipScreen
 import com.neutrino.drive.ui.files.openItem
-import com.neutrino.drive.ui.keys.EncryptionSetupScreen
-import com.neutrino.drive.ui.keys.KeyCodeScreen
-import com.neutrino.drive.ui.keys.PairingScreen
-import com.neutrino.drive.ui.keys.RecoveryKitScreen
 import com.neutrino.drive.ui.settings.KeyOptionsScreen
 import com.neutrino.drive.ui.settings.PhotoBackupScreen
 import com.neutrino.drive.ui.settings.SettingsScreen
 import com.neutrino.drive.ui.settings.ShowKitScreen
+import com.neutrino.shared.android.security.AppLock
+import com.neutrino.shared.android.ui.LockScreen
+import com.neutrino.shared.android.ui.auth.LoginScreen
+import com.neutrino.shared.android.ui.auth.RegisterScreen
+import com.neutrino.shared.android.ui.keys.EncryptionSetupScreen
+import com.neutrino.shared.android.ui.keys.KeyCodeScreen
+import com.neutrino.shared.android.ui.keys.PairingScreen
+import com.neutrino.shared.android.ui.keys.RecoveryKitScreen
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -197,22 +197,4 @@ private fun KeyFlow(onBack: () -> Unit, content: @Composable (onDone: () -> Unit
             }
         }
     } }
-}
-
-/** Over everything while the app lock is engaged. Prompts straight away; the button retries. */
-@Composable
-private fun LockScreen() {
-    val activity = LocalContext.current as FragmentActivity
-    val scope = rememberCoroutineScope()
-    suspend fun unlock() {
-        if (AppLock.authenticate(activity, "Unlock Neutrino Drive", "Your files are encrypted on this phone.")) AppLock.unlocked()
-    }
-    LaunchedEffect(Unit) { unlock() }
-    Surface(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Image(painterResource(R.drawable.ic_launcher_art), null, Modifier.size(80.dp).clip(RoundedCornerShape(20.dp)))
-            Text("Neutrino Drive is locked", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 20.dp))
-            Button(onClick = { scope.launch { unlock() } }, modifier = Modifier.padding(top = 20.dp)) { Text("Unlock") }
-        }
-    }
 }

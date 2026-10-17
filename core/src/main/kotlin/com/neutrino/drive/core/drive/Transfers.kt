@@ -1,13 +1,17 @@
 package com.neutrino.drive.core.drive
 
-import com.neutrino.drive.core.api.ApiException
-import com.neutrino.drive.core.api.DriveDate
-import com.neutrino.drive.core.api.FileDto
 import com.neutrino.drive.core.api.NeutrinoApi
-import com.neutrino.drive.core.api.apiJson
-import com.neutrino.drive.core.crypto.FileCrypto
-import com.neutrino.drive.core.crypto.SecretStream
-import com.neutrino.drive.core.keys.KeyringException
+import com.neutrino.shared.core.api.ApiException
+import com.neutrino.shared.core.api.DriveDate
+import com.neutrino.shared.core.api.FileDto
+import com.neutrino.shared.core.api.apiJson
+import com.neutrino.shared.core.crypto.FileCrypto
+import com.neutrino.shared.core.crypto.SecretStream
+import com.neutrino.shared.core.keys.DeviceKeyCheck
+import com.neutrino.shared.core.keys.KeyException
+import com.neutrino.shared.core.keys.KeyringException
+import com.neutrino.shared.core.keys.KeyringStore
+import com.neutrino.shared.core.keys.openDek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
