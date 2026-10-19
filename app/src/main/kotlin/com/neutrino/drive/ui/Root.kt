@@ -65,6 +65,7 @@ import com.neutrino.drive.ui.settings.PhotoBackupScreen
 import com.neutrino.drive.ui.settings.SettingsScreen
 import com.neutrino.drive.ui.settings.ShowKitScreen
 import com.neutrino.shared.android.security.AppLock
+import com.neutrino.shared.android.ui.ConnectivityBanner
 import com.neutrino.shared.android.ui.LockScreen
 import com.neutrino.shared.android.ui.auth.LoginScreen
 import com.neutrino.shared.android.ui.auth.RegisterScreen
@@ -149,8 +150,14 @@ private fun Home(pendingLink: StateFlow<String?>, consumeLink: () -> Unit) {
             }
         },
     ) { padding ->
-        Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
-            RouteContent(nav.current, nav, vm)
+        val online by graph.network.isOnline.collectAsState()
+        Column(Modifier.padding(padding).consumeWindowInsets(padding)) {
+            // Drive queues nothing made offline but uploads, which say so themselves, so the strip
+            // promises nothing: what is shown is what this device already has.
+            ConnectivityBanner(isOnline = online, keepsChangesOffline = false)
+            Box(Modifier.weight(1f)) {
+                RouteContent(nav.current, nav, vm)
+            }
         }
     }
 }
