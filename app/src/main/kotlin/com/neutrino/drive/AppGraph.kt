@@ -9,6 +9,7 @@ import com.neutrino.drive.core.drive.LocalSearchIndex
 import com.neutrino.drive.core.drive.SharingService
 import com.neutrino.drive.core.drive.Uploader
 import com.neutrino.drive.storage.OfflineStore
+import com.neutrino.shared.android.net.NetworkMonitor
 import com.neutrino.drive.storage.Settings
 import com.neutrino.drive.transfer.ThumbnailCache
 import com.neutrino.shared.android.NeutrinoAccount
@@ -47,6 +48,7 @@ class AppGraph(context: Context) {
     val sharing = SharingService(api, keyringStore)
     val offline = OfflineStore(this.context, downloader)
     val searchIndex = LocalSearchIndex()
+    val network = NetworkMonitor(this.context).also { it.start() }
     val thumbnails = ThumbnailCache(api)
 
     val signedIn: StateFlow<Boolean> = account.signedIn

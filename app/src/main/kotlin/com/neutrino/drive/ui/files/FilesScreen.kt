@@ -125,6 +125,9 @@ fun FilesScreen(
     val folder = place as? Place.Folder
 
     LaunchedEffect(place.key) { vm.load(place) }
+    // A folder that failed to load while offline loads again when the connection comes back.
+    val online by graph.network.isOnline.collectAsState()
+    LaunchedEffect(online) { if (online && vm.listing(place).error != null) vm.load(place, force = true) }
 
     // Uploads finishing into this folder refresh it.
     val uploads by remember { WorkManager.getInstance(context).getWorkInfosByTagFlow(Outbox.TAG) }.collectAsState(initial = emptyList())
