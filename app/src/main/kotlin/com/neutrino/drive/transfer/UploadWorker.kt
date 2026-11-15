@@ -136,7 +136,7 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 if (file.exists()) {
                     val thumbnail = ThumbnailGenerator.forUri(applicationContext.contentResolver, Uri.fromFile(file), item.mimeType)
                     graph.uploader.upload(
-                        UploadSource(item.name, item.mimeType) { file.inputStream() },
+                        UploadSource(item.name, item.mimeType, length = file.length()) { file.inputStream() },
                         job.folderId,
                         thumbnailBase64 = thumbnail,
                         uploadId = item.uploadId,

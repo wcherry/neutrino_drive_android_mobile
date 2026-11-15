@@ -28,10 +28,16 @@ import java.io.InputStream
 import java.time.Instant
 import java.util.UUID
 
-/** Something to upload: its name, plaintext type, and a way to read it (possibly more than once). */
+/**
+ * Something to upload: its name, plaintext type, and a way to read it (possibly more than once).
+ *
+ * `length` is the plaintext's exact size when the caller knows it (a file). NEB1 authenticates the
+ * length in its header, so without it the upload reads the source once to count it first.
+ */
 class UploadSource(
     val name: String,
     val mimeType: String,
+    val length: Long? = null,
     val open: () -> InputStream,
 )
 
@@ -95,7 +101,7 @@ class FilePendingKeyStore(private val file: File) : PendingKeyStore {
  * 0. finish an earlier attempt whose blob committed but whose key never did
  * 1. refuse unless this device's key is the account's published key ([DeviceKeyCheck])
  * 2. a fresh DEK (or the one an interrupted attempt already sealed), and the content encrypted
- *    with it — streamed to a temp file, never whole in memory
+ *    with it as NEB1 (neutrino#318) — a chunk at a time into a temp file, never whole in memory
  * 3. `{name, mimeType}` encrypted with the same DEK
  * 4. the DEK sealed to this device's active key, recorded locally before anything is sent
  * 5. one multipart `POST /drive/files/upload` carrying ciphertext, sealed key and dates, so the
@@ -138,8 +144,12 @@ class Uploader(
         tempDir.mkdirs()
         val cipherFile = File.createTempFile("nd-upload-", ".bin", tempDir)
         try {
+            // NEB1 (neutrino#318), a chunk at a time from the source into the temp file. The
+            // length goes into the authenticated header, so a source that changes size while it is
+            // read fails here rather than producing a body that lies about itself.
+            val length = source.length ?: source.open().use { countBytes(it) }
             cipherFile.outputStream().buffered().use { out ->
-                source.open().use { input -> SecretStream.encrypt(input, out, dek) }
+                source.open().use { input -> SecretStream.encryptNeb1(input, out, dek, length) }
             }
             val encryptedMetadata = FileCrypto.encryptMetadata(source.name, source.mimeType, dek)
             val (sealed, keyVersion) = if (resumed != null && resumedDek != null) {
@@ -352,5 +362,16 @@ private class CountingStream(input: InputStream, private val onCount: (Long) -> 
     private fun report(n: Long) {
         count += n
         onCount(count)
+    }
+}
+
+/** Reads `input` to its end and returns how many bytes it held. */
+private fun countBytes(input: InputStream): Long {
+    val buf = ByteArray(64 * 1024)
+    var total = 0L
+    while (true) {
+        val n = input.read(buf)
+        if (n < 0) return total
+        total += n
     }
 }
