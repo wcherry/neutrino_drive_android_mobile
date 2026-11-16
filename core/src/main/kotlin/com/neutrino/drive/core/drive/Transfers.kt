@@ -288,8 +288,9 @@ private class TypedBody(private val inner: RequestBody, private val type: MediaT
  * 1. `GET /files/{id}/key` → the sealed DEK and the key version it names
  * 2. open it with that keyring entry — then, failing that, every other one, newest first (a ref
  *    filed under the wrong number is re-filed under the one that opened it)
- * 3. stream the blob through [SecretStream] into a temp file, renamed into place only once the MAC
- *    has verified
+ * 3. stream the blob through [FileCrypto.decryptFile] — v0, NEB1 or Photos-chunked, whichever the
+ *    bytes are (neutrino#318), one chunk in memory at a time — into a temp file, renamed into place
+ *    only once every MAC has verified
  *
  * A historical version decrypts with the file's *current* DEK: the server stores no per-version
  * key, and clients reuse a file's DEK across saves.
@@ -329,7 +330,7 @@ class Downloader(private val api: NeutrinoApi, private val keys: KeyringStore) {
                         if (dek == null) {
                             // No key ref: a legacy plaintext upload. Nothing to decrypt.
                             input.copyTo(out)
-                        } else if (!SecretStream.decrypt(input, out, dek)) {
+                        } else if (!FileCrypto.decryptFile(input, out, dek, totalLength = total.takeIf { it >= 0 })) {
                             throw DownloadException.DecryptionFailed()
                         }
                     }

@@ -13,6 +13,7 @@ import com.neutrino.drive.core.drive.Uploader
 import com.neutrino.shared.core.FakeServer
 import com.neutrino.shared.core.crypto.B64
 import com.neutrino.shared.core.crypto.FileCrypto
+import com.neutrino.shared.core.crypto.SecretStream
 import com.neutrino.shared.core.crypto.Sodium
 import com.neutrino.shared.core.keys.DeviceKeyCheck
 import com.neutrino.shared.core.keys.InMemoryKeyringStore
@@ -102,6 +103,31 @@ class EndToEndTest {
         // And the metadata is what the web would read.
         val dek = FileCrypto.openSealedDek(fake.keyRefs[result.id]!![fake.userId]!!.first, c.manager.keyring()!!.active!!.secretKey)!!
         assertEquals(FileCrypto.Metadata("Plan — v2.pdf", "application/pdf"), FileCrypto.decryptMetadata(stored.encryptedMetadata, dek))
+    }
+
+    @Test
+    fun aNeb1BodyDownloads() = runBlocking {
+        // Another client wrote the file as NEB1 (neutrino#318): the downloader must open it too.
+        val c = signedIn()
+        c.manager.provision()
+        val result = c.uploader.upload(UploadSource("clip.mov", "video/quicktime") { "x".byteInputStream() }, null)
+        val dek = FileCrypto.openSealedDek(fake.keyRefs[result.id]!![fake.userId]!!.first, c.manager.keyring()!!.active!!.secretKey)!!
+        val content = ByteArray(3 * 4096 + 5) { (it * 31).toByte() }
+        fake.files[result.id] = fake.files[result.id]!!.copy(blob = SecretStream.encryptNeb1(content, dek, 4096))
+
+        val out = File(tmp, "clip.mov")
+        c.downloader.download(result.id, out)
+        assertArrayEquals(content, out.readBytes())
+
+        // A damaged chunk fails the download and leaves nothing behind.
+        val damaged = SecretStream.encryptNeb1(content, dek, 4096).also { it[100] = (it[100].toInt() xor 1).toByte() }
+        fake.files[result.id] = fake.files[result.id]!!.copy(blob = damaged)
+        val bad = File(tmp, "bad.mov")
+        try {
+            c.downloader.download(result.id, bad); fail()
+        } catch (_: Downloader.DownloadException.DecryptionFailed) {
+        }
+        assertFalse(bad.exists())
     }
 
     @Test
