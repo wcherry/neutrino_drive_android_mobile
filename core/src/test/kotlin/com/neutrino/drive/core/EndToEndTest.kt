@@ -106,6 +106,34 @@ class EndToEndTest {
     }
 
     @Test
+    fun uploadsAreNeb1WithOrWithoutAKnownLength() = runBlocking {
+        val c = signedIn()
+        c.manager.provision()
+        val content = ByteArray(3 * 1024 * 1024 + 7) { (it * 17).toByte() }
+        for (length in listOf(content.size.toLong(), null)) {
+            val result = c.uploader.upload(UploadSource("v.mov", "video/quicktime", length) { content.inputStream() }, null)
+            val blob = fake.files[result.id]!!.blob
+            assertArrayEquals("NEB1".toByteArray(), blob.copyOf(4))
+            assertEquals(44L + content.size + 17 * 4, blob.size.toLong())
+            val out = File(tmp, "v-$length.mov")
+            c.downloader.download(result.id, out)
+            assertArrayEquals(content, out.readBytes())
+        }
+    }
+
+    @Test
+    fun aSourceShorterThanItsStatedLengthIsRefused() = runBlocking {
+        val c = signedIn()
+        c.manager.provision()
+        try {
+            c.uploader.upload(UploadSource("a.bin", "application/octet-stream", 100) { ByteArray(99).inputStream() }, null)
+            fail()
+        } catch (_: java.io.IOException) {
+        }
+        assertTrue(fake.files.isEmpty())
+    }
+
+    @Test
     fun aNeb1BodyDownloads() = runBlocking {
         // Another client wrote the file as NEB1 (neutrino#318): the downloader must open it too.
         val c = signedIn()
